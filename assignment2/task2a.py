@@ -65,8 +65,12 @@ class SoftmaxModel:
                  use_improved_weight_init: bool  # Task 3c hyperparameter
                  ):
         # Define number of input nodes
-        self.I = None
+        self.I = 785
         self.use_improved_sigmoid = use_improved_sigmoid
+
+        #Buffers for the backpropagation
+        self.a_1 = None
+        self.a_2 = None
 
         # Define number of output nodes
         # neurons_per_layer = [64, 10] indicates that we will have two layers:
@@ -91,7 +95,16 @@ class SoftmaxModel:
         Returns:
             y: output of model with shape [batch size, num_outputs]
         """
-        return None
+
+        self.a_1 = X.dot(self.ws[0]) 
+        #Activate with sigmoid function here
+        self.a_1 = np.exp(self.a_1)/(np.exp(self.a_1) + 1)
+
+        self.a_2 =  self.a_1.dot(self.ws[1])
+        #Activate with the softmax function here
+        y = np.exp(self.a_2)/np.sum(np.exp(self.a_2), axis=1, keepdims=True)
+
+        return y
 
     def backward(self, X: np.ndarray, outputs: np.ndarray,
                  targets: np.ndarray) -> None:
@@ -103,9 +116,32 @@ class SoftmaxModel:
         """
         assert targets.shape == outputs.shape,\
             f"Output shape: {outputs.shape}, targets: {targets.shape}"
+        
         # A list of gradients.
         # For example, self.grads[0] will be the gradient for the first hidden layer
-        self.grads = []
+
+        self.grads = [None, None]
+
+        # a = (targets - outputs)
+
+        # self.grads[1] = np.transpose((-1/(self.neurons_per_layer[len(self.neurons_per_layer) - 1]*X.shape[0])) * np.transpose(a).dot(X))
+
+        #Output layer backpropagation
+        delta_k = -(targets - outputs)
+        dC_dw2 = delta_k dot self.a_2
+
+        #Hidden layer backpropagation
+        # a = sig(x)
+        # dsig/dx = (a)(1-a)
+        delta_j = np.dot(delta_k, self.ws[1]) * sigmoid_derivative(X.dot(self.ws[0]))# * self.ws[1]
+        dC_dw1 = delta_j * X
+
+ 
+
+        
+        #Adding L2 regularization
+        # self.grad += self.l2_reg_lambda*self.w
+
 
         for grad, w in zip(self.grads, self.ws):
             assert grad.shape == w.shape,\
