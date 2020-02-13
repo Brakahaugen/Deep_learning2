@@ -52,7 +52,7 @@ def cross_entropy_loss(targets: np.ndarray, outputs: np.ndarray):
         f"Targets shape: {targets.shape}, outputs: {outputs.shape}"
 
     ce = targets * np.log(outputs)
-    ce = -np.sum(ce)/ce.size
+    ce = -np.sum(ce)/len(targets)
     return ce
 
 
@@ -155,7 +155,7 @@ class SoftmaxModel:
         self.grads = [None for i in range(len(self.ws))]
 
     def sigmoid_derivative(self, x):
-        return np.exp(-x) / ((1 + np.exp(-x))**2)
+        return np.exp(-x) / np.square((1 + np.exp(-x)))
 
 def one_hot_encode(Y: np.ndarray, num_classes: int):
     """
