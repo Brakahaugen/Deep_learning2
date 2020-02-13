@@ -82,10 +82,17 @@ class SoftmaxModel:
         prev = self.I
         for size in self.neurons_per_layer:
             w_shape = (prev, size)
-            print("Initializing weight to shape:", w_shape)
-            w = np.random.uniform(-1, 1, (w_shape)) 
+
+            if use_improved_weight_init:
+                print("Initializing improved weight to shape:", w_shape)
+                w = np.random.normal(0, 1/np.sqrt(prev), (w_shape)) 
+            else:
+                print("Initializing weight to shape:", w_shape)
+                w = np.random.uniform(-1, 1, (w_shape)) 
+
             self.ws.append(w)
             prev = size
+
         self.grads = [None for i in range(len(self.ws))]
 
     def forward(self, X: np.ndarray) -> np.ndarray:
@@ -98,13 +105,23 @@ class SoftmaxModel:
 
         self.a_1 = X.dot(self.ws[0]) 
         #Activate with sigmoid function here
-        self.a_1 = np.exp(self.a_1)/(np.exp(self.a_1) + 1)
+
+        if self.use_improved_sigmoid:
+            self.a_1 = self.improved_sigmoid(self.a_1)
+        else:
+            self.a_1 = self.sigmoid(self.a_1)
 
         self.a_2 =  self.a_1.dot(self.ws[1])
         #Activate with the softmax function here
         y = np.exp(self.a_2)/np.sum(np.exp(self.a_2), axis=1, keepdims=True)
 
         return y
+
+    def sigmoid(self, x):
+        return np.exp(x)/(np.exp(x) + 1)
+
+    def improved_sigmoid(self, x):
+        return 1.7159 * np.tanh(2*x/3)
 
     def backward(self, X: np.ndarray, outputs: np.ndarray,
                  targets: np.ndarray) -> None:
@@ -116,27 +133,20 @@ class SoftmaxModel:
         """
         assert targets.shape == outputs.shape,\
             f"Output shape: {outputs.shape}, targets: {targets.shape}"
-        
-        # A list of gradients.
-        # For example, self.grads[0] will be the gradient for the first hidden layer
 
-        # a = (targets - outputs)
-
-        # self.grads[1] = np.transpose((-1/(self.neurons_per_layer[len(self.neurons_per_layer) - 1]*X.shape[0])) * np.transpose(a).dot(X))
 
         #Output layer backpropagation
         delta_k = -(targets - outputs)
         dC_dw2 = np.dot(delta_k.T, self.a_1).T
 
         #Hidden layer backpropagation
-        # a = sig(x)
-        # dsig/dx = (a)(1-a)
-
+        
         z = np.dot(X, self.ws[0])
-        # print(z.shape)
-
-
-        delta_j = np.dot(self.ws[1], delta_k.T).T * self.sigmoid_derivative(z) # * self.ws[1]
+        
+        if self.use_improved_sigmoid:
+            delta_j = np.dot(self.ws[1], delta_k.T).T * self.improved_sigmoid_derivative(z) # * self.ws[1]
+        else:
+            delta_j = np.dot(self.ws[1], delta_k.T).T * self.sigmoid_derivative(z)
         dC_dw1 = np.dot(delta_j.T, X).T
 
 
@@ -156,6 +166,9 @@ class SoftmaxModel:
 
     def sigmoid_derivative(self, x):
         return np.exp(-x) / np.square((1 + np.exp(-x)))
+
+    def improved_sigmoid_derivative(self, x):
+        return 1.7159 * 2 / (3 * np.square(np.cosh(2*x/3)))
 
 def one_hot_encode(Y: np.ndarray, num_classes: int):
     """

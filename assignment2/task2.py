@@ -2,6 +2,7 @@ import numpy as np
 import utils
 import matplotlib.pyplot as plt
 import typing
+from sklearn.utils import shuffle
 from task2a import cross_entropy_loss, SoftmaxModel, one_hot_encode, pre_process_images
 np.random.seed(0)
 
@@ -58,6 +59,7 @@ def train(
     global_step = 0
     for epoch in range(num_epochs):
         for step in range(num_batches_per_epoch):
+
             start = step * batch_size
             end = start + batch_size
             X_batch, Y_batch = X_train[start:end], Y_train[start:end]
@@ -85,6 +87,11 @@ def train(
                     X_val, Y_val, model)
 
             global_step += 1
+            
+        if use_shuffle:
+            X_train[:], Y_train[:] = shuffle(X_train[:], Y_train[:])
+
+
     return model, train_loss, val_loss, train_accuracy, val_accuracy
 
 
@@ -111,9 +118,9 @@ if __name__ == "__main__":
     momentum_gamma = .9  # Task 3 hyperparameter
 
     # Settings for task 3. Keep all to false for task 2.
-    use_shuffle = False
-    use_improved_sigmoid = False
-    use_improved_weight_init = False
+    use_shuffle = True
+    use_improved_sigmoid = True
+    use_improved_weight_init = True
     use_momentum = False
 
     model = SoftmaxModel(
