@@ -16,7 +16,21 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray,
     Returns:
         Accuracy (float)
     """
-    accuracy = 0
+
+    outputs = model.forward(X) 
+
+    total_predictions = 0
+
+    #For each training example n
+    for n in range(targets.shape[0]):
+        #Get index of the largest probability-value in each example
+        max_index = np.argmax(outputs[n])
+
+        if targets[n, max_index] == 1:
+            total_predictions += 1
+
+    accuracy = total_predictions/targets.shape[0]
+
     return accuracy
 
 
@@ -48,6 +62,14 @@ def train(
             end = start + batch_size
             X_batch, Y_batch = X_train[start:end], Y_train[start:end]
 
+            
+            # Do the gradient descent:
+            outputs = model.forward(X_batch) 
+            model.backward(X_batch, outputs, Y_batch)
+            model.ws[0] = model.ws[0] - learning_rate * model.grads[0]
+            model.ws[1] = model.ws[1] - learning_rate * model.grads[1]
+
+
             # Track train / validation loss / accuracy
             # every time we progress 20% through the dataset
             if (global_step % num_steps_per_val) == 0:
@@ -69,8 +91,17 @@ def train(
 if __name__ == "__main__":
     # Load dataset
     validation_percentage = 0.2
+    num_classes = 10
     X_train, Y_train, X_val, Y_val, X_test, Y_test = utils.load_full_mnist(
         validation_percentage)
+
+    X_train = pre_process_images(X_train)
+    X_val = pre_process_images(X_val)
+    X_test = pre_process_images(X_test)
+    Y_train = one_hot_encode(Y_train, num_classes)
+    Y_val = one_hot_encode(Y_val, num_classes)
+    Y_test = one_hot_encode(Y_test, num_classes)
+    
 
     # Hyperparameters
     num_epochs = 20
@@ -98,6 +129,8 @@ if __name__ == "__main__":
         use_shuffle=use_shuffle,
         use_momentum=use_momentum,
         momentum_gamma=momentum_gamma)
+
+
 
     print("Final Train Cross Entropy Loss:",
           cross_entropy_loss(Y_train, model.forward(X_train)))
