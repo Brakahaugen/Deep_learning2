@@ -55,9 +55,10 @@ def train(
     val_loss = {}
     train_accuracy = {}
     val_accuracy = {}
-
+    prev_gradient_steps = [0, 0]
     global_step = 0
     for epoch in range(num_epochs):
+        print(epoch)
         for step in range(num_batches_per_epoch):
 
             start = step * batch_size
@@ -66,10 +67,22 @@ def train(
 
             
             # Do the gradient descent:
-            outputs = model.forward(X_batch) 
-            model.backward(X_batch, outputs, Y_batch)
-            model.ws[0] = model.ws[0] - learning_rate * model.grads[0]
-            model.ws[1] = model.ws[1] - learning_rate * model.grads[1]
+            if use_momentum:
+                outputs = model.forward(X_batch) 
+                model.backward(X_batch, outputs, Y_batch)
+
+                gradient_steps = [(learning_rate * model.grads[0]), (learning_rate * model.grads[1])]
+
+                model.ws[0] = model.ws[0] - (gradient_steps[0] + momentum_gamma * prev_gradient_steps[0])
+                model.ws[1] = model.ws[1] - (gradient_steps[1] + momentum_gamma * prev_gradient_steps[1])
+
+                prev_gradient_steps = gradient_steps
+
+            else:
+                outputs = model.forward(X_batch) 
+                model.backward(X_batch, outputs, Y_batch)
+                model.ws[0] = model.ws[0] - learning_rate * model.grads[0]
+                model.ws[1] = model.ws[1] - learning_rate * model.grads[1]
 
 
             # Track train / validation loss / accuracy
@@ -96,6 +109,11 @@ def train(
 
 
 if __name__ == "__main__":
+    train_losses = {}
+    train_accuracies = {}
+    val_losses = {}
+    val_accuracies = {}
+
     # Load dataset
     validation_percentage = 0.2
     num_classes = 10
@@ -108,67 +126,106 @@ if __name__ == "__main__":
     Y_train = one_hot_encode(Y_train, num_classes)
     Y_val = one_hot_encode(Y_val, num_classes)
     Y_test = one_hot_encode(Y_test, num_classes)
-    
 
     # Hyperparameters
-    num_epochs = 20
+    num_epochs = 30
     learning_rate = .1
     batch_size = 32
     neurons_per_layer = [64, 10]
     momentum_gamma = .9  # Task 3 hyperparameter
 
-    # Settings for task 3. Keep all to false for task 2.
-    use_shuffle = True
-    use_improved_sigmoid = True
-    use_improved_weight_init = True
-    use_momentum = False
+    for i in range(5): 
+        # Settings for task 3. Keep all to false for task 2.
+        use_shuffle = False
+        use_improved_weight_init = False
+        use_improved_sigmoid = False
+        use_momentum = False
 
-    model = SoftmaxModel(
-        neurons_per_layer,
-        use_improved_sigmoid,
-        use_improved_weight_init)
-    model, train_loss, val_loss, train_accuracy, val_accuracy = train(
-        model,
-        [X_train, Y_train, X_val, Y_val, X_test, Y_test],
-        num_epochs=num_epochs,
-        learning_rate=learning_rate,
-        batch_size=batch_size,
-        use_shuffle=use_shuffle,
-        use_momentum=use_momentum,
-        momentum_gamma=momentum_gamma)
+        if i > 0:
+            use_shuffle = True
+        if i > 1:
+            use_improved_sigmoid = True
+        if i > 2:
+            use_improved_weight_init = True
+        if i > 3:
+            use_momentum = True
+
+        model = SoftmaxModel(
+            neurons_per_layer,
+            use_improved_sigmoid,
+            use_improved_weight_init)
+        model, train_loss, val_loss, train_accuracy, val_accuracy = train(
+            model,
+            [X_train, Y_train, X_val, Y_val, X_test, Y_test],
+            num_epochs=num_epochs,
+            learning_rate=learning_rate,
+            batch_size=batch_size,
+            use_shuffle=use_shuffle,
+            use_momentum=use_momentum,
+            momentum_gamma=momentum_gamma)
 
 
 
-    print("Final Train Cross Entropy Loss:",
-          cross_entropy_loss(Y_train, model.forward(X_train)))
-    print("Final Validation Cross Entropy Loss:",
-          cross_entropy_loss(Y_val, model.forward(X_val)))
-    print("Final Test Cross Entropy Loss:",
-          cross_entropy_loss(Y_test, model.forward(X_test)))
+        print("Final Train Cross Entropy Loss:",
+            cross_entropy_loss(Y_train, model.forward(X_train)))
+        print("Final Validation Cross Entropy Loss:",
+            cross_entropy_loss(Y_val, model.forward(X_val)))
+        print("Final Test Cross Entropy Loss:",
+            cross_entropy_loss(Y_test, model.forward(X_test)))
 
-    print("Final Train accuracy:",
-          calculate_accuracy(X_train, Y_train, model))
-    print("Final Validation accuracy:",
-          calculate_accuracy(X_val, Y_val, model))
-    print("Final Test accuracy:",
-          calculate_accuracy(X_test, Y_test, model))
+        print("Final Train accuracy:",
+            calculate_accuracy(X_train, Y_train, model))
+        print("Final Validation accuracy:",
+            calculate_accuracy(X_val, Y_val, model))
+        print("Final Test accuracy:",
+            calculate_accuracy(X_test, Y_test, model))
 
+        train_losses[i] = train_loss
+        train_accuracies[i] = train_accuracy
+        val_losses[i] = val_loss
+        val_accuracies[i] = val_accuracy
+
+        use_shuffle = False
+        use_improved_weight_init = False
+        use_improved_sigmoid = False
+        use_momentum = False
+
+    tricks = ["No Tricks", "use_shuffle", "use_improved_sigmoid", "use_improved_weight_init", "use_momentum"]
     # Plot loss
     plt.figure(figsize=(20, 8))
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 2, 1)
     plt.ylim([0.1, .5])
-    utils.plot_loss(train_loss, "Training Loss")
-    utils.plot_loss(val_loss, "Validation Loss")
+    for i in range(5):
+        utils.plot_loss(train_losses[i], "Training Loss - " + str(tricks[i]))
     plt.xlabel("Number of gradient steps")
     plt.ylabel("Cross Entropy Loss")
     plt.legend()
-    plt.subplot(1, 2, 2)
+
+    plt.subplot(2, 2, 2)
+    plt.ylim([0.1, .5])
+    for i in range(5):
+        utils.plot_loss(val_losses[i], "Validation Loss - " + str(tricks[i]))
+    plt.xlabel("Number of gradient steps")
+    plt.ylabel("Cross Entropy Loss")
+    plt.legend()
+
+    plt.subplot(2, 2, 3)
     # Plot accuracy
     plt.ylim([0.9, 1.0])
-    utils.plot_loss(train_accuracy, "Training Accuracy")
-    utils.plot_loss(val_accuracy, "Validation Accuracy")
+    for i in range(5):
+        utils.plot_loss(train_accuracies[i], "Training Accuracy - " + str(tricks[i]))
     plt.legend()
     plt.xlabel("Number of gradient steps")
     plt.ylabel("Accuracy")
+
+    plt.subplot(2, 2, 4)
+    # Plot accuracy
+    plt.ylim([0.9, 1.0])
+    for i in range(5):
+        utils.plot_loss(val_accuracies[i], "Validation Accuracy - " + str(tricks[i]))
+    plt.legend()
+    plt.xlabel("Number of gradient steps")
+    plt.ylabel("Accuracy")
+
     plt.savefig("softmax_train_graph.png")
     plt.show()
