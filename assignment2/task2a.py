@@ -120,25 +120,28 @@ class SoftmaxModel:
         # A list of gradients.
         # For example, self.grads[0] will be the gradient for the first hidden layer
 
-        self.grads = [None, None]
-
         # a = (targets - outputs)
 
         # self.grads[1] = np.transpose((-1/(self.neurons_per_layer[len(self.neurons_per_layer) - 1]*X.shape[0])) * np.transpose(a).dot(X))
 
         #Output layer backpropagation
         delta_k = -(targets - outputs)
-        dC_dw2 = delta_k dot self.a_2
+        dC_dw2 = np.dot(delta_k.T, self.a_1).T
 
         #Hidden layer backpropagation
         # a = sig(x)
         # dsig/dx = (a)(1-a)
-        delta_j = np.dot(delta_k, self.ws[1]) * sigmoid_derivative(X.dot(self.ws[0]))# * self.ws[1]
-        dC_dw1 = delta_j * X
 
- 
+        z = np.dot(X, self.ws[0])
+        # print(z.shape)
 
-        
+
+        delta_j = np.dot(self.ws[1], delta_k.T).T * self.sigmoid_derivative(z) # * self.ws[1]
+        dC_dw1 = np.dot(delta_j.T, X).T
+
+
+        self.grads = [dC_dw1, dC_dw2]
+
         #Adding L2 regularization
         # self.grad += self.l2_reg_lambda*self.w
 
@@ -147,9 +150,12 @@ class SoftmaxModel:
             assert grad.shape == w.shape,\
                 f"Expected the same shape. Grad shape: {grad.shape}, w: {w.shape}."
 
+
     def zero_grad(self) -> None:
         self.grads = [None for i in range(len(self.ws))]
 
+    def sigmoid_derivative(self, x):
+        return np.exp(-x) / ((1 + np.exp(-x))**2)
 
 def one_hot_encode(Y: np.ndarray, num_classes: int):
     """
