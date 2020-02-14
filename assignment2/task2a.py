@@ -52,7 +52,7 @@ def cross_entropy_loss(targets: np.ndarray, outputs: np.ndarray):
         f"Targets shape: {targets.shape}, outputs: {outputs.shape}"
 
     ce = targets * np.log(outputs)
-    ce = -np.sum(ce)#/len(targets)
+    ce = -np.sum(ce)/targets.shape[0]
     return ce
 
 
@@ -85,10 +85,10 @@ class SoftmaxModel:
 
             if use_improved_weight_init:
                 print("Initializing improved weight to shape:", w_shape)
-                w = np.random.normal(0, 1/np.sqrt(prev), (w_shape)) 
+                w = np.random.normal(0, 1/np.sqrt(prev), (w_shape))
             else:
                 print("Initializing weight to shape:", w_shape)
-                w = np.random.uniform(-1, 1, (w_shape)) 
+                w = np.random.uniform(-1, 1, (w_shape))
 
             self.ws.append(w)
             prev = size
@@ -103,7 +103,7 @@ class SoftmaxModel:
             y: output of model with shape [batch size, num_outputs]
         """
 
-        self.a_1 = X.dot(self.ws[0]) 
+        self.a_1 = X.dot(self.ws[0])
         #Activate with sigmoid function here
 
         if self.use_improved_sigmoid:
@@ -140,9 +140,9 @@ class SoftmaxModel:
         dC_dw2 = np.dot(delta_k.T, self.a_1).T
 
         #Hidden layer backpropagation
-        
+
         z = np.dot(X, self.ws[0])
-        
+
         if self.use_improved_sigmoid:
             delta_j = np.dot(self.ws[1], delta_k.T).T * self.improved_sigmoid_derivative(z) # * self.ws[1]
         else:
@@ -150,7 +150,7 @@ class SoftmaxModel:
         dC_dw1 = np.dot(delta_j.T, X).T
 
 
-        self.grads = [dC_dw1, dC_dw2]
+        self.grads = [dC_dw1/X.shape[0], dC_dw2/X.shape[0]]
 
         #Adding L2 regularization
         # self.grad += self.l2_reg_lambda*self.w
