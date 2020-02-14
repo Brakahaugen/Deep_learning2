@@ -18,7 +18,7 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray,
         Accuracy (float)
     """
 
-    outputs = model.forward(X) 
+    outputs = model.forward(X)
 
     total_predictions = 0
 
@@ -65,10 +65,10 @@ def train(
             end = start + batch_size
             X_batch, Y_batch = X_train[start:end], Y_train[start:end]
 
-            
+
             # Do the gradient descent:
             if use_momentum:
-                outputs = model.forward(X_batch) 
+                outputs = model.forward(X_batch)
                 model.backward(X_batch, outputs, Y_batch)
 
                 gradient_steps = [(learning_rate * model.grads[0]), (learning_rate * model.grads[1])]
@@ -79,7 +79,7 @@ def train(
                 prev_gradient_steps = gradient_steps
 
             else:
-                outputs = model.forward(X_batch) 
+                outputs = model.forward(X_batch)
                 model.backward(X_batch, outputs, Y_batch)
                 model.ws[0] = model.ws[0] - learning_rate * model.grads[0]
                 model.ws[1] = model.ws[1] - learning_rate * model.grads[1]
@@ -100,7 +100,7 @@ def train(
                     X_val, Y_val, model)
 
             global_step += 1
-            
+
         if use_shuffle:
             X_train[:], Y_train[:] = shuffle(X_train[:], Y_train[:])
 
@@ -129,9 +129,9 @@ if __name__ == "__main__":
 
     # Hyperparameters
     num_epochs = 20
-    learning_rate = .1
+    learning_rate = .5
     batch_size = 32
-    neurons_per_layer = [60, 60, 10]
+    neurons_per_layer = [64, 64, 64, 10]
     momentum_gamma = .9  # Task 3 hyperparameter
 
     # Settings for task 3. Keep all to false for task 2.
