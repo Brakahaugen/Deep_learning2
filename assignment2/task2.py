@@ -91,7 +91,7 @@ def train(
                 _val_loss = cross_entropy_loss(Y_val, model.forward(X_val))
                 val_loss[global_step] = _val_loss
 
-                _train_loss = cross_entropy_loss(Y_batch, outputs)
+                _train_loss = cross_entropy_loss(Y_train, model.forward(X_train))
                 train_loss[global_step] = _train_loss
 
                 train_accuracy[global_step] = calculate_accuracy(
@@ -128,104 +128,71 @@ if __name__ == "__main__":
     Y_test = one_hot_encode(Y_test, num_classes)
 
     # Hyperparameters
-    num_epochs = 30
+    num_epochs = 20
     learning_rate = .1
     batch_size = 32
-    neurons_per_layer = [64, 10]
+    neurons_per_layer = [60, 60, 10]
     momentum_gamma = .9  # Task 3 hyperparameter
 
-    for i in range(5): 
-        # Settings for task 3. Keep all to false for task 2.
-        use_shuffle = False
-        use_improved_weight_init = False
-        use_improved_sigmoid = False
-        use_momentum = False
+    # Settings for task 3. Keep all to false for task 2.
+    use_shuffle = False
+    use_improved_sigmoid = False
+    use_improved_weight_init = False
+    use_momentum = False
 
-        if i > 0:
-            use_shuffle = True
-        if i > 1:
-            use_improved_sigmoid = True
-        if i > 2:
-            use_improved_weight_init = True
-        if i > 3:
-            use_momentum = True
-
-        model = SoftmaxModel(
-            neurons_per_layer,
-            use_improved_sigmoid,
-            use_improved_weight_init)
-        model, train_loss, val_loss, train_accuracy, val_accuracy = train(
-            model,
-            [X_train, Y_train, X_val, Y_val, X_test, Y_test],
-            num_epochs=num_epochs,
-            learning_rate=learning_rate,
-            batch_size=batch_size,
-            use_shuffle=use_shuffle,
-            use_momentum=use_momentum,
-            momentum_gamma=momentum_gamma)
+    model = SoftmaxModel(
+        neurons_per_layer,
+        use_improved_sigmoid,
+        use_improved_weight_init)
+    model, train_loss, val_loss, train_accuracy, val_accuracy = train(
+        model,
+        [X_train, Y_train, X_val, Y_val, X_test, Y_test],
+        num_epochs=num_epochs,
+        learning_rate=learning_rate,
+        batch_size=batch_size,
+        use_shuffle=use_shuffle,
+        use_momentum=use_momentum,
+        momentum_gamma=momentum_gamma)
 
 
 
-        print("Final Train Cross Entropy Loss:",
-            cross_entropy_loss(Y_train, model.forward(X_train)))
-        print("Final Validation Cross Entropy Loss:",
-            cross_entropy_loss(Y_val, model.forward(X_val)))
-        print("Final Test Cross Entropy Loss:",
-            cross_entropy_loss(Y_test, model.forward(X_test)))
+    print("Final Train Cross Entropy Loss:",
+        cross_entropy_loss(Y_train, model.forward(X_train)))
+    print("Final Validation Cross Entropy Loss:",
+        cross_entropy_loss(Y_val, model.forward(X_val)))
+    print("Final Test Cross Entropy Loss:",
+        cross_entropy_loss(Y_test, model.forward(X_test)))
 
-        print("Final Train accuracy:",
-            calculate_accuracy(X_train, Y_train, model))
-        print("Final Validation accuracy:",
-            calculate_accuracy(X_val, Y_val, model))
-        print("Final Test accuracy:",
-            calculate_accuracy(X_test, Y_test, model))
+    print("Final Train accuracy:",
+        calculate_accuracy(X_train, Y_train, model))
+    print("Final Validation accuracy:",
+        calculate_accuracy(X_val, Y_val, model))
+    print("Final Test accuracy:",
+        calculate_accuracy(X_test, Y_test, model))
 
-        train_losses[i] = train_loss
-        train_accuracies[i] = train_accuracy
-        val_losses[i] = val_loss
-        val_accuracies[i] = val_accuracy
+    # train_losses[i] = train_loss
+    # train_accuracies[i] = train_accuracy
+    # val_losses[i] = val_loss
+    # val_accuracies[i] = val_accuracy
 
-        use_shuffle = False
-        use_improved_weight_init = False
-        use_improved_sigmoid = False
-        use_momentum = False
 
-    tricks = ["No Tricks", "use_shuffle", "use_improved_sigmoid", "use_improved_weight_init", "use_momentum"]
     # Plot loss
     plt.figure(figsize=(20, 8))
-    plt.subplot(2, 2, 1)
+    plt.subplot(1, 2, 1)
     plt.ylim([0.1, .5])
-    for i in range(5):
-        utils.plot_loss(train_losses[i], "Training Loss - " + str(tricks[i]))
+    utils.plot_loss(train_loss, "Training Loss")
+    utils.plot_loss(val_loss, "Validation Loss")
     plt.xlabel("Number of gradient steps")
     plt.ylabel("Cross Entropy Loss")
     plt.legend()
+    plt.subplot(1, 2, 2)
 
-    plt.subplot(2, 2, 2)
-    plt.ylim([0.1, .5])
-    for i in range(5):
-        utils.plot_loss(val_losses[i], "Validation Loss - " + str(tricks[i]))
-    plt.xlabel("Number of gradient steps")
-    plt.ylabel("Cross Entropy Loss")
-    plt.legend()
-
-    plt.subplot(2, 2, 3)
     # Plot accuracy
     plt.ylim([0.9, 1.0])
-    for i in range(5):
-        utils.plot_loss(train_accuracies[i], "Training Accuracy - " + str(tricks[i]))
+    utils.plot_loss(train_accuracy, "Training Accuracy")
+    utils.plot_loss(val_accuracy, "Validation Accuracy")
     plt.legend()
     plt.xlabel("Number of gradient steps")
     plt.ylabel("Accuracy")
-
-    plt.subplot(2, 2, 4)
-    # Plot accuracy
-    plt.ylim([0.9, 1.0])
-    for i in range(5):
-        utils.plot_loss(val_accuracies[i], "Validation Accuracy - " + str(tricks[i]))
-    plt.legend()
-    plt.xlabel("Number of gradient steps")
-    plt.ylabel("Accuracy")
-
     plt.savefig("softmax_train_graph.png")
     plt.show()

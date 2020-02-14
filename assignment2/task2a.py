@@ -69,8 +69,8 @@ class SoftmaxModel:
         self.use_improved_sigmoid = use_improved_sigmoid
 
         #Buffers for the backpropagation
-        self.a_1 = None
-        self.a_2 = None
+        self.a = []
+        
 
         # Define number of output nodes
         # neurons_per_layer = [64, 10] indicates that we will have two layers:
@@ -102,26 +102,35 @@ class SoftmaxModel:
         Returns:
             y: output of model with shape [batch size, num_outputs]
         """
+        #resetting the activation buffer
+        self.a = []
 
-        self.a_1 = X.dot(self.ws[0])
-        #Activate with sigmoid function here
+        #Handling the first layer
+        self.a.append(X.dot(self.ws[0]))
+        
+        for i in range(1, len(self.neurons_per_layer)):
+            if self.use_improved_sigmoid:
+                self.a[i - 1] = self.improved_sigmoid(self.a[i - 1])
+            else:
+                self.a[i - 1] = self.sigmoid(self.a[i - 1])
 
-        if self.use_improved_sigmoid:
-            self.a_1 = self.improved_sigmoid(self.a_1)
-        else:
-            self.a_1 = self.sigmoid(self.a_1)
+            self.a.append(self.a[i - 1].dot(self.ws[i]))
 
-        self.a_2 =  self.a_1.dot(self.ws[1])
-        #Activate with the softmax function here
-        y = np.exp(self.a_2)/np.sum(np.exp(self.a_2), axis=1, keepdims=True)
+        #Activate with the softmax function for the output here
+        y = self.softmax(self.a[-1])
+
 
         return y
+        
 
     def sigmoid(self, x):
         return np.exp(x)/(np.exp(x) + 1)
 
     def improved_sigmoid(self, x):
         return 1.7159 * np.tanh(2*x/3)
+
+    def softmax(self, x):
+        return np.exp(x)/np.sum(np.exp(x), axis=1, keepdims=True)
 
     def backward(self, X: np.ndarray, outputs: np.ndarray,
                  targets: np.ndarray) -> None:
@@ -136,21 +145,33 @@ class SoftmaxModel:
 
 
         #Output layer backpropagation
-        delta_k = -(targets - outputs)
-        dC_dw2 = np.dot(delta_k.T, self.a_1).T
+        delta = -(targets - outputs)
+        self.grads[-1] = (np.dot(delta.T, self.a[-2]).T) / X.shape[0]
 
         #Hidden layer backpropagation
+        for i in range(1, len(self.ws) - 1):
+            z = np.dot(self.a[-2-i], self.ws[-1-i])
+            if self.use_improved_sigmoid:
+                delta = np.dot(self.ws[-i], delta.T).T * self.improved_sigmoid_derivative(z) # * self.ws[1]
+            else:
+                delta = np.dot(self.ws[-i], delta.T).T * self.sigmoid_derivative(z)
 
+            self.grads[-1-i] = (np.dot(delta.T, self.a[-2-i]).T) / X.shape[0]
+
+
+        # First layer backpropagation
         z = np.dot(X, self.ws[0])
-
         if self.use_improved_sigmoid:
-            delta_j = np.dot(self.ws[1], delta_k.T).T * self.improved_sigmoid_derivative(z) # * self.ws[1]
+            delta = np.dot(self.ws[1], delta.T).T * self.improved_sigmoid_derivative(z) # * self.ws[1]
         else:
-            delta_j = np.dot(self.ws[1], delta_k.T).T * self.sigmoid_derivative(z)
-        dC_dw1 = np.dot(delta_j.T, X).T
+            delta = np.dot(self.ws[1], delta.T).T * self.sigmoid_derivative(z)
+
+        self.grads[0] = np.dot(delta.T, X).T / X.shape[0]
 
 
-        self.grads = [dC_dw1/X.shape[0], dC_dw2/X.shape[0]]
+
+
+
 
         #Adding L2 regularization
         # self.grad += self.l2_reg_lambda*self.w

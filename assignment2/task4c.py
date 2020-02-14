@@ -18,7 +18,7 @@ if __name__ == "__main__":
         f"Expected X_train to have 785 elements per image. Shape was: {X_train.shape}"
 
     # Modify your network here
-    neurons_per_layer = [64, 64, 10]
+    neurons_per_layer = [60, 60, 10]
     use_improved_sigmoid = True
     use_improved_weight_init = True
     model = SoftmaxModel(
