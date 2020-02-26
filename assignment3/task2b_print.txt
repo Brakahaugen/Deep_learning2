@@ -1,0 +1,8 @@
+Training_loss: 0.257
+Training_acc: 0.915
+
+Validation_loss: 0.834
+Validation_accuracy: 0.740
+
+Test_loss: 0.858
+Test_accuracy: 0.739
