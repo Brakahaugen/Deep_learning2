@@ -1,4 +1,5 @@
 
+import pathlib
 import matplotlib.pyplot as plt
 from PIL import Image
 import torchvision
@@ -45,5 +46,46 @@ def torch_image_to_numpy(image: torch.Tensor):
     image = np.moveaxis(image, 0, 2)
     return image
 
+def save_plot(name: str):
+    plot_path = pathlib.Path("plots")
+    plot_path.mkdir(exist_ok=True)
+    plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
 
+
+# Task 4b
 indices = [14, 26, 32, 49, 52]
+
+fig = plt.figure(figsize=(20, 4))
+
+for i in range(len(indices)):
+    plt.subplot(2,5,i+1)
+    plt.title('Filter ' + str(indices[i]))
+    plt.imshow(torch_image_to_numpy(first_conv_layer.weight[indices[i]]))
+
+    plt.subplot(2, 5, i+6)
+    plt.imshow(activation[0, indices[i]].data, cmap="gray")
+
+save_plot('task4b')
+plt.show()
+
+
+# Task 4c
+fig = plt.figure(figsize=(20, 4))
+
+for i in range(10):
+    image = Image.open("images/zebra.jpg")
+    image = image_transform(image)[None]
+
+    for child in model.children():
+        if isinstance(child, torch.nn.modules.pooling.AdaptiveAvgPool2d):
+            # Break when we come to the second last layer
+            break
+        image = child(image)
+
+    plt.subplot(2,5,i+1)
+    plt.title('Filter ' + str(i))
+    plt.imshow(image[0,i].data, cmap="gray")
+
+fig.subplots_adjust(hspace=0.5)
+save_plot('task4c')
+plt.show()
