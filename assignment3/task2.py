@@ -6,7 +6,6 @@ import time
 import typing
 import collections
 from torch import nn
-import torchvision  # for task 4
 from dataloaders import load_cifar10
  
  
