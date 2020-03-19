@@ -8,7 +8,7 @@ import time
 import typing
 import collections
 from torch import nn
-import torchvision  # for task 4
+import torchvision
 from dataloaders import load_cifar10
  
  
@@ -163,7 +163,6 @@ class Trainer:
  
        for epoch in range(self.epochs):
            self.epoch = epoch
-           print('Training epoch number ' + str(epoch) + '/' + str(self.epochs))
 
            # Perform a full pass through all the training samples
            for X_batch, Y_batch in self.dataloader_train:
