@@ -18,9 +18,22 @@ def calculate_iou(prediction_box, gt_box):
     # YOUR CODE HERE
 
     # Compute intersection
-
+    x1 = max(prediction_box[0], gt_box[0])
+    y1 = max(prediction_box[1], gt_box[1])
+    x2 = min(prediction_box[2], gt_box[2])
+    y2 = min(prediction_box[3], gt_box[3])
+    
+    if ((x1 >= x2) or (y1 >= y2)):
+        intersection = 0
+    else:
+        intersection = abs((x2-x1) * (y2-y1))
+    
     # Compute union
-    iou = 0
+    pred_box_area = (prediction_box[2] - prediction_box[0]) * (prediction_box[3] - prediction_box[1])
+    gt_box_area = (gt_box[2] - gt_box[0]) * (gt_box[3] - gt_box[1])
+    union = pred_box_area + gt_box_area - intersection
+
+    iou = intersection/union
     assert iou >= 0 and iou <= 1
     return iou
 
@@ -36,7 +49,10 @@ def calculate_precision(num_tp, num_fp, num_fn):
     Returns:
         float: value of precision
     """
-    raise NotImplementedError
+    if num_tp + num_fp == 0:
+        return 1
+    else:
+        return num_tp/(num_tp + num_fp)
 
 
 def calculate_recall(num_tp, num_fp, num_fn):
@@ -49,7 +65,10 @@ def calculate_recall(num_tp, num_fp, num_fn):
     Returns:
         float: value of recall
     """
-    raise NotImplementedError
+    if num_tp + num_fn == 0:
+        return 0
+    else:
+        return num_tp/(num_tp + num_fn)
 
 
 def get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold):
@@ -73,15 +92,34 @@ def get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold):
             Each row includes [xmin, xmax, ymin, ymax]
     """
     # Find all possible matches with a IoU >= iou threshold
-
-
+    """
+    Finn all mulige matches. Så for hver pred box finn all ground truth matches og legg til i liste
+    """
+    box_matches = []
+    for pred_box in prediction_boxes:
+        for gt_box in gt_boxes:
+            if calculate_iou(pred_box, gt_box) >= iou_threshold:
+                box_matches.append([calculate_iou(pred_box, gt_box), pred_box, gt_box])
+    
+    
     # Sort all matches on IoU in descending order
+    box_matches.sort(key=lambda match: match[0], reverse=True)
 
     # Find all matches with the highest IoU threshold
+    if len(box_matches):
+        match = box_matches[0]
+        matched_pred_boxes = np.array([match[1]])
+        matched_gt_boxes = np.array([match[2]])
+        
+        for match in box_matches:
+            if not ((match[1] == matched_pred_boxes).all(1).any() or (match[2] == matched_gt_boxes).all(1).any()):
+                matched_pred_boxes = np.append(matched_pred_boxes, [match[1]], 0)
+                matched_gt_boxes = np.append(matched_gt_boxes, [match[2]], 0)
+    else:
+        matched_pred_boxes = np.array([])
+        matched_gt_boxes = np.array([])
 
-
-    
-    return np.array([]), np.array([])
+    return matched_pred_boxes, matched_gt_boxes
 
 
 def calculate_individual_image_result(prediction_boxes, gt_boxes, iou_threshold):
@@ -102,7 +140,15 @@ def calculate_individual_image_result(prediction_boxes, gt_boxes, iou_threshold)
             {"true_pos": int, "false_pos": int, false_neg": int}
     """
 
-    raise NotImplementedError
+    matched_pred_boxes, matched_gt_boxes = get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold)
+
+    results = {}
+    results["true_pos"] = matched_pred_boxes.shape[0]
+
+    results["false_pos"] = prediction_boxes.shape[0] - matched_pred_boxes.shape[0]
+
+    results["false_neg"] = gt_boxes.shape[0] - matched_gt_boxes.shape[0]
+    return results
 
 
 def calculate_precision_recall_all_images(
@@ -124,7 +170,17 @@ def calculate_precision_recall_all_images(
     Returns:
         tuple: (precision, recall). Both float.
     """
-    raise NotImplementedError
+
+    tp = 0
+    fp = 0
+    fn = 0
+    for pred_box, gt_box in zip(all_prediction_boxes, all_gt_boxes):
+        r = (calculate_individual_image_result(pred_box, gt_box, iou_threshold))
+        tp += r["true_pos"]
+        fp += r["false_pos"]
+        fn += r["false_neg"]
+
+    return (calculate_precision(tp,fp,fn), calculate_recall(tp,fp,fn))
 
 
 def get_precision_recall_curve(
@@ -160,6 +216,26 @@ def get_precision_recall_curve(
 
     precisions = [] 
     recalls = []
+
+
+    for threshold in confidence_thresholds:
+        img_preds = []
+
+        for img, boxes_p in enumerate(all_prediction_boxes):
+            preds = [box_p for i, box_p in enumerate(boxes_p) if confidence_scores[img][i] >= threshold]
+            preds = np.array(preds)
+            img_preds.append(preds)
+
+        img_preds = np.array(img_preds)
+        p, r = calculate_precision_recall_all_images(img_preds, all_gt_boxes, iou_threshold)
+        precisions.append(p)
+        recalls.append(r)
+
+        print(threshold)
+    #     prec_rec = calculate_precision_recall_all_images(all_prediction_boxes, all_gt_boxes, threshold)
+    #     precisions.append(prec_rec[0])
+    #     recalls.append(prec_rec[1])
+        
     return np.array(precisions), np.array(recalls)
 
 
@@ -174,6 +250,7 @@ def plot_precision_recall_curve(precisions, recalls):
     Returns:
         None
     """
+    print("heyo")
     plt.figure(figsize=(20, 20))
     plt.plot(recalls, precisions)
     plt.xlabel("Recall")
@@ -225,10 +302,16 @@ def mean_average_precision(ground_truth_boxes, predicted_boxes):
     for image_id in ground_truth_boxes.keys():
         pred_boxes = predicted_boxes[image_id]["boxes"]
         scores = predicted_boxes[image_id]["scores"]
-
         all_gt_boxes.append(ground_truth_boxes[image_id])
         all_prediction_boxes.append(pred_boxes)
         confidence_scores.append(scores)
+
+
+
+    ######################################
+    # print(scores[0])  
+    # calculate_iou(all_gt_boxes[0], all_prediction_boxes[0])
+    #######################################
 
     precisions, recalls = get_precision_recall_curve(
         all_prediction_boxes, all_gt_boxes, confidence_scores, 0.5)
@@ -241,3 +324,4 @@ if __name__ == "__main__":
     ground_truth_boxes = read_ground_truth_boxes()
     predicted_boxes = read_predicted_boxes()
     mean_average_precision(ground_truth_boxes, predicted_boxes)
+
