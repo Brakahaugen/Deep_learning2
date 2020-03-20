@@ -212,6 +212,7 @@ def get_precision_recall_curve(
     # Instead of going over every possible confidence score threshold to compute the PR
     # curve, we will use an approximation
     confidence_thresholds = np.linspace(0, 1, 500)
+
     # YOUR CODE HERE
 
     precisions = [] 
@@ -231,11 +232,6 @@ def get_precision_recall_curve(
         precisions.append(p)
         recalls.append(r)
 
-        print(threshold)
-    #     prec_rec = calculate_precision_recall_all_images(all_prediction_boxes, all_gt_boxes, threshold)
-    #     precisions.append(prec_rec[0])
-    #     recalls.append(prec_rec[1])
-        
     return np.array(precisions), np.array(recalls)
 
 
@@ -250,7 +246,6 @@ def plot_precision_recall_curve(precisions, recalls):
     Returns:
         None
     """
-    print("heyo")
     plt.figure(figsize=(20, 20))
     plt.plot(recalls, precisions)
     plt.xlabel("Recall")
@@ -272,10 +267,21 @@ def calculate_mean_average_precision(precisions, recalls):
     """
     # Calculate the mean average precision given these recall levels.
     recall_levels = np.linspace(0, 1.0, 11)
-    # YOUR CODE HERE
-    average_precision = 0
-    return average_precision
 
+    # YOUR CODE HERE
+    #for each level in recall levels we have to take the biggest value of precision whose recall value is greater or equal to that
+    precision_levels = np.zeros(11)
+
+    for i in range(len(recall_levels)):
+        # calculate precission for this recall levell.
+        j = 0
+        while j < len(recalls) and recalls[j] >= recall_levels[i]:
+            precision_levels[i] = precisions[j]
+            j += 1
+
+
+    average_precision = sum(precision_levels)/len(precision_levels)
+    return average_precision
 
 def mean_average_precision(ground_truth_boxes, predicted_boxes):
     """ Calculates the mean average precision over the given dataset
@@ -305,13 +311,6 @@ def mean_average_precision(ground_truth_boxes, predicted_boxes):
         all_gt_boxes.append(ground_truth_boxes[image_id])
         all_prediction_boxes.append(pred_boxes)
         confidence_scores.append(scores)
-
-
-
-    ######################################
-    # print(scores[0])  
-    # calculate_iou(all_gt_boxes[0], all_prediction_boxes[0])
-    #######################################
 
     precisions, recalls = get_precision_recall_curve(
         all_prediction_boxes, all_gt_boxes, confidence_scores, 0.5)
