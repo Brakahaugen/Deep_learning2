@@ -1,3 +1,4 @@
+from torch import nn
 import torch
 
 
@@ -18,7 +19,7 @@ class BasicModel(torch.nn.Module):
         image_size = cfg.INPUT.IMAGE_SIZE
         output_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
         self.output_channels = output_channels
-        image_channels = cfg.MODEL.BACKBONE.INPUT_CHANNELS
+        self.image_channels = cfg.MODEL.BACKBONE.INPUT_CHANNELS
         self.output_feature_size = cfg.MODEL.PRIORS.FEATURE_MAPS
     
     def forward(self, x):
@@ -34,10 +35,65 @@ class BasicModel(torch.nn.Module):
         where out_features[0] should have the shape:
             shape(-1, output_channels[0], 38, 38),
         """
+        
+        nn.Sequential(
+            self.addConv2D(self.image_channels, 32),
+            self.addMaxPool2D(),
+            nn.ReLU(),
+            self.addConv2D(32, 64),
+            self.addMaxPool2D(),
+            nn.ReLU(),
+            self.addConv2D(64, 64),
+            nn.ReLU(),
+            self.addConv2D(64, self.output_channels[0], s=2),
+
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[0], 128),
+            nn.ReLU(),
+            self.addConv2D(128, self.output_channels[1], s=2),
+
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[1], 256),
+            nn.ReLU(),
+            self.addConv2D(256, self.output_channels[2], s=2),
+
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[2], 128),
+            nn.ReLU(),
+            self.addConv2D(128, self.output_channels[3], s=2),
+            
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[3], 128),
+            nn.ReLU(),
+            self.addConv2D(128, self.output_channels[4], s=2),
+
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[4], 128),
+            nn.ReLU(),
+            self.addConv2D(128, self.output_channels[5], padding=0),
+        )
+
+
+           
         out_features = []
         for idx, feature in enumerate(out_features):
             expected_shape = (out_channel, feature_map_size, feature_map_size)
             assert feature.shape[1:] == expected_shape, \
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
         return tuple(out_features)
+    
+    def addConv2D(self, image_channels, num_filters, s=1, padding=1):
+        return nn.Conv2d(
+            in_channels=image_channels,
+            out_channels=num_filters,
+            kernel_size=3,
+            stride=s,
+            padding=padding
+        )
 
+    def addMaxPool2D(self):
+        return nn.MaxPool2d(
+            kernel_size = 2,
+            stride = 2,
+        )
+    
