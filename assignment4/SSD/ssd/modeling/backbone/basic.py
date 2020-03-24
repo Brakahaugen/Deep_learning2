@@ -83,9 +83,8 @@ class BasicModel(torch.nn.Module):
         where out_features[0] should have the shape:
             shape(-1, output_channels[0], 38, 38),
         """
-        print("\nhello1\n")
 
-        out_features = []
+        out_features = nn.ModuleList()
         last_out_feature = x
         for i in range(6):
             last_out_feature = self.models[i](last_out_feature)
@@ -95,7 +94,6 @@ class BasicModel(torch.nn.Module):
         # out_features.append(self.model1.forward(out_features[0])))
         
         #6 lag i cnn
-        print("\nhello\n")
         for idx, feature in enumerate(out_features):
             expected_shape = (self.output_channels[idx], self.output_feature_size[idx], self.output_feature_size[idx])
             assert feature.shape[1:] == expected_shape, \
