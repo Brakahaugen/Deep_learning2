@@ -49,6 +49,22 @@ class BasicModel(torch.nn.Module):
             self.addConv2D(256, self.output_channels[2], s=2),
         ))
 
+        #ADDING SOME BROAD LAYERS IN THE MIDDLE
+        self.models.append(nn.Sequential(
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[2], 256),
+            nn.ReLU(),
+            self.addConv2D(256, 512),
+        ))
+
+        self.models.append(nn.Sequential(
+            nn.ReLU(),
+            self.addConv2D(512, 1024),
+            nn.ReLU(),
+            self.addConv2D(1024, self.output_channels[2], s=2),
+        ))
+        ## BACK TO OG
+        
         self.models.append(nn.Sequential(
             nn.ReLU(),
             self.addConv2D(self.output_channels[2], 128),
