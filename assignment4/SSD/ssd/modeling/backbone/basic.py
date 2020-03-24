@@ -22,7 +22,7 @@ class BasicModel(torch.nn.Module):
         image_channels = cfg.MODEL.BACKBONE.INPUT_CHANNELS
         self.output_feature_size = cfg.MODEL.PRIORS.FEATURE_MAPS
 
-        self.models = []
+        self.models = nn.ModuleList()
         self.models.append(nn.Sequential(
             self.addConv2D(image_channels, 32),
             self.addMaxPool2D(),
@@ -84,7 +84,7 @@ class BasicModel(torch.nn.Module):
             shape(-1, output_channels[0], 38, 38),
         """
 
-        out_features = nn.ModuleList()
+        out_features = []
         last_out_feature = x
         for i in range(6):
             last_out_feature = self.models[i](last_out_feature)
