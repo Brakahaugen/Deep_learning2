@@ -223,8 +223,7 @@ def get_precision_recall_curve(
         img_preds = []
 
         for img, boxes_p in enumerate(all_prediction_boxes):
-            preds = [box_p for i, box_p in enumerate(boxes_p) if confidence_scores[img][i] >= threshold]
-            preds = np.array(preds)
+            preds = np.array([box_p for i, box_p in enumerate(boxes_p) if confidence_scores[img][i] >= threshold])
             img_preds.append(preds)
 
         img_preds = np.array(img_preds)
