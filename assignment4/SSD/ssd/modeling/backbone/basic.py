@@ -25,65 +25,122 @@ class BasicModel(torch.nn.Module):
         self.models = nn.ModuleList()
         self.models.append(nn.Sequential(
             self.addConv2D(image_channels, 32),
+            torch.nn.BatchNorm2d(32),
             self.addMaxPool2D(),
             nn.ReLU(),
             self.addConv2D(32, 64),
+            torch.nn.BatchNorm2d(64),
             self.addMaxPool2D(),
             nn.ReLU(),
             self.addConv2D(64, 64),
+            torch.nn.BatchNorm2d(64),
             nn.ReLU(),
             self.addConv2D(64, self.output_channels[0], s=2),
         ))
 
         self.models.append(nn.Sequential(
+            torch.nn.BatchNorm2d(self.output_channels[0]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[0], 128),
+            self.addConv2D(self.output_channels[0], self.output_channels[0]),
+            torch.nn.BatchNorm2d(self.output_channels[0]),
             nn.ReLU(),
-            self.addConv2D(128, self.output_channels[1], s=2),
+            
+            #Adding three extra for depth
+            self.addConv2D(self.output_channels[0], self.output_channels[0]),
+            torch.nn.BatchNorm2d(self.output_channels[0]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[0], self.output_channels[0]),
+            torch.nn.BatchNorm2d(self.output_channels[0]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[0], self.output_channels[0]),
+            torch.nn.BatchNorm2d(self.output_channels[0]),
+            nn.ReLU(),
+            
+            self.addConv2D(self.output_channels[0], self.output_channels[1], s=2),
         ))
 
         self.models.append(nn.Sequential(
+            torch.nn.BatchNorm2d(self.output_channels[1]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[1], 256),
+            self.addConv2D(self.output_channels[1], self.output_channels[1]),
+            torch.nn.BatchNorm2d(self.output_channels[1]),
             nn.ReLU(),
-            self.addConv2D(256, self.output_channels[2], s=2),
+            
+            #Adding three extra for depth
+            self.addConv2D(self.output_channels[1], self.output_channels[1]),
+            torch.nn.BatchNorm2d(self.output_channels[1]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[1], self.output_channels[1]),
+            torch.nn.BatchNorm2d(self.output_channels[1]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[1], self.output_channels[1]),
+            torch.nn.BatchNorm2d(self.output_channels[1]),
+            nn.ReLU(),
+            
+            self.addConv2D(self.output_channels[1], self.output_channels[2], s=2),
         ))
 
-        #ADDING SOME BROAD LAYERS IN THE MIDDLE
         self.models.append(nn.Sequential(
+            torch.nn.BatchNorm2d(self.output_channels[2]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[2], 256),
+            self.addConv2D(self.output_channels[2], self.output_channels[2]),
+            torch.nn.BatchNorm2d(self.output_channels[2]),
             nn.ReLU(),
-            self.addConv2D(256, 512),
-        ))
-
-        self.models.append(nn.Sequential(
+            
+            #Adding three extra for depth
+            self.addConv2D(self.output_channels[2], self.output_channels[2]),
+            torch.nn.BatchNorm2d(self.output_channels[2]),
             nn.ReLU(),
-            self.addConv2D(512, 1024),
+            self.addConv2D(self.output_channels[2], self.output_channels[2]),
+            torch.nn.BatchNorm2d(self.output_channels[2]),
             nn.ReLU(),
-            self.addConv2D(1024, self.output_channels[2], s=2),
-        ))
-        ## BACK TO OG
-        
-        self.models.append(nn.Sequential(
+            self.addConv2D(self.output_channels[2], self.output_channels[2]),
+            torch.nn.BatchNorm2d(self.output_channels[2]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[2], 128),
-            nn.ReLU(),
-            self.addConv2D(128, self.output_channels[3], s=2),
+            
+            self.addConv2D(self.output_channels[2], self.output_channels[3], s=2),
         ))
         
         self.models.append(nn.Sequential(
+            torch.nn.BatchNorm2d(self.output_channels[3]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[3], 128),
+            self.addConv2D(self.output_channels[3], self.output_channels[3]),
+            torch.nn.BatchNorm2d(self.output_channels[3]),
             nn.ReLU(),
-            self.addConv2D(128, self.output_channels[4], s=2),  
+            
+            #Adding three extra for depth
+            self.addConv2D(self.output_channels[3], self.output_channels[3]),
+            torch.nn.BatchNorm2d(self.output_channels[3]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[3], self.output_channels[3]),
+            torch.nn.BatchNorm2d(self.output_channels[3]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[3], self.output_channels[3]),
+            torch.nn.BatchNorm2d(self.output_channels[3]),
+            nn.ReLU(),
+            
+            self.addConv2D(self.output_channels[3], self.output_channels[4], s=2),  
         ))
         
         self.models.append(nn.Sequential(
+            torch.nn.BatchNorm2d(self.output_channels[4]),
             nn.ReLU(),
-            self.addConv2D(self.output_channels[4], 128),
+            self.addConv2D(self.output_channels[4], self.output_channels[4]),
+            torch.nn.BatchNorm2d(self.output_channels[4]),
             nn.ReLU(),
-            self.addConv2D(128, self.output_channels[5], padding=0),
+            
+            #Adding three extra for depth
+            self.addConv2D(self.output_channels[4], self.output_channels[4]),
+            torch.nn.BatchNorm2d(self.output_channels[4]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[4], self.output_channels[4]),
+            torch.nn.BatchNorm2d(self.output_channels[4]),
+            nn.ReLU(),
+            self.addConv2D(self.output_channels[4], self.output_channels[4]),
+            torch.nn.BatchNorm2d(self.output_channels[4]),
+            nn.ReLU(),  
+            
+            self.addConv2D(self.output_channels[4], self.output_channels[5], padding=0),
         ))
     
     def forward(self, x):
@@ -102,7 +159,7 @@ class BasicModel(torch.nn.Module):
 
         out_features = []
         last_out_feature = x
-        for i in range(6):
+        for i in range(8):
             last_out_feature = self.models[i](last_out_feature)
             out_features.append(last_out_feature)
 
